@@ -12,7 +12,7 @@ from time import perf_counter
 bitmap = multiprocessing.RawArray('i', (2 ** 27)+1)
 # bitmap = [0] * ((2**32+31)//32)
 
-def find_new_line(chunks, file):
+def find_new_line(chunks: list[list[int, int]], file) -> list[list[int, int]]:
     # go through each pair of [start, end]
     # adjust end to the closest start of the line
     # shift current end and next start
@@ -26,7 +26,7 @@ def find_new_line(chunks, file):
     return chunks
 
 
-def split_file_to_chunks(filename, process_count):
+def split_file_to_chunks(filename: str, process_count: int) -> list[list[int,int]]:
     # check filesize and create several ranges
     # to read file in chunks
 
@@ -38,7 +38,7 @@ def split_file_to_chunks(filename, process_count):
     return chunks
 
 
-def fill_bitmap(filename: str, chunk):
+def fill_bitmap(filename: str, chunk: list[int, int]) -> None:
     global bitmap
     start_pos = chunk[0]
     end_pos = chunk[1]
@@ -57,12 +57,12 @@ def fill_bitmap(filename: str, chunk):
             bitmap[ip_to_number // 32] |= (1 << (ip_to_number % 32))
 
 
-def count_unique_ips(start_pos, end_pos):
+def count_unique_ips(start_pos: int, end_pos: int) -> int:
     global bitmap
     return sum(1 for x in range(start_pos, end_pos) if (bitmap[x // 32] & (1 << (x % 32))))
 
 
-def main():
+def main() -> int:
 
     start = time.perf_counter()
     # little config
