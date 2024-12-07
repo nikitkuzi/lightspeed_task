@@ -2,8 +2,6 @@ import os
 import time
 import multiprocessing
 
-bitmap = multiprocessing.RawArray('i', (2 ** 27) + 1)
-
 
 def find_new_line(chunks: list[list[int]], file_with_ip: str) -> list[list[int]]:
     # go through each pair of [start, end]
@@ -33,47 +31,66 @@ def split_file_to_chunks(file_with_ip: str, process_count: int) -> list[list[int
     return chunks
 
 
-def fill_bitmap(file_with_ip: str, chunk: list[int, int]) -> None:
-    global bitmap
+def fill_bitmap(file_with_ip: str, bitmap_file: str, chunk: list[int, int]) -> None:
     start_pos = chunk[0]
     end_pos = chunk[1]
-    with open(file_with_ip, 'r') as file:
-        # move pointer to starting position
+    with open(bitmap_file, 'rb+') as bitmap:
+        with open(file_with_ip, 'r') as file:
+            # move pointer to starting position
+            file.seek(start_pos)
+            while start_pos < end_pos:
+                # read line by line in current chunk
+                curr_line = file.readline()
+                start_pos += len(curr_line)
+                # convert ip to integer
+                octets = curr_line.strip().split(".")
+                ip_to_number = (int(octets[0]) << 24) | (int(octets[1]) << 16) | (int(octets[2]) << 8) | (
+                    int(octets[3]))
+                # set corresponding bit in the bitmap
+                # and write it to the bitmap file
+                bitmap.seek(ip_to_number // 8)
+                byte = ord(bitmap.read(1))
+                byte |= (1 << (7 - (ip_to_number % 8)))
+                bitmap.seek(-1, 1)
+                bitmap.write(bytes([byte]))
+
+
+def count_unique_ips(bitmap_file: str, chunk: list[int, int]) -> int:
+    # adjust ranges
+    # and count set bits in the bytes of the bitmap file
+    start_pos = chunk[0] // 8
+    end_pos = chunk[1] // 8
+    with open(bitmap_file, 'rb') as file:
+        sm = 0
         file.seek(start_pos)
         while start_pos < end_pos:
-            # read line by line in current chunk
-            curr_line = file.readline()
-            start_pos += len(curr_line)
-            # convert ip to integer
-            octets = curr_line.strip().split(".")
-            ip_to_number = (int(octets[0]) << 24) | (int(octets[1]) << 16) | (int(octets[2]) << 8) | (int(octets[3]))
-            # set corresponding bit in the bitmap
-            bitmap[ip_to_number // 32] |= (1 << (ip_to_number % 32))
-
-
-def count_unique_ips(start_pos: int, end_pos: int) -> int:
-    # go through the bitmap
-    # and count set bits
-    global bitmap
-    return sum(1 for x in range(start_pos, end_pos) if (bitmap[x // 32] & (1 << (x % 32))))
+            byte = file.read(1)
+            sm += bin(ord(byte)).count('1')
+            start_pos += 1
+    return sm
 
 
 def main() -> int:
     start_time = time.perf_counter()
     # little config
+    # file_with_ip = "ip_addresses"
     # file_with_ip = 'test_data3.txt' # 1000
     # file_with_ip = "test_data.txt" # 9988184
     file_with_ip = "test_data2.txt" # 98845647
+    bitmap_file = "bitmap.dat"
     process_count = multiprocessing.cpu_count() // 2
-    names = [file_with_ip] * process_count
+    file_names = [file_with_ip] * process_count
+    bitmap_names = [bitmap_file] * process_count
+    with open(bitmap_file, 'wb') as file:
+        file.write(bytearray(2**29))
 
-    # split file into chunks [a,b] ]to read in separate processes
+    # split file into chunks [a,b] to read in separate processes
     # then modify the ranges, so that a is always at the beginning of a new line
     chunks_ranges = split_file_to_chunks(file_with_ip, process_count)
 
     # read file and fill bitmap to count unique ip
     with multiprocessing.Pool(processes=process_count) as pool:
-        pool.starmap(fill_bitmap, zip(names, chunks_ranges))
+        pool.starmap(fill_bitmap, zip(file_names, bitmap_names, chunks_ranges))
     end_time = time.perf_counter()
 
     print("done reading file and filling bitmap, took: ", end_time - start_time)
@@ -86,11 +103,13 @@ def main() -> int:
     chunks_ranges[-1][1] = 2 ** 32
 
     with multiprocessing.Pool(processes=process_count) as pool:
-        chunk_sum = pool.starmap(count_unique_ips, chunks_ranges)
+        chunk_sum = pool.starmap(count_unique_ips, zip(bitmap_names, chunks_ranges))
     res = sum(chunk_sum)
 
     end_time = time.perf_counter()
     print("done counting unique number, took: ", end_time - start_time)
+    # remove file if needed
+    # os.remove(bitmap_file)
     return res
 
 
