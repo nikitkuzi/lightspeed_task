@@ -2,8 +2,6 @@ import os
 import time
 import multiprocessing
 
-bitmap = multiprocessing.RawArray('i', (2 ** 27) + 1)
-
 
 def find_new_line(chunks: list[list[int]], file_with_ip: str) -> list[list[int]]:
     # go through each pair of [start, end]
@@ -63,7 +61,7 @@ def main() -> int:
     # little config
     # file_with_ip = 'test_data3.txt' # 1000
     # file_with_ip = "test_data.txt" # 9988184
-    file_with_ip = "test_data2.txt" # 98845647
+    file_with_ip = "test_data2.txt"  # 98845647
     process_count = multiprocessing.cpu_count() // 2
     names = [file_with_ip] * process_count
 
@@ -93,6 +91,8 @@ def main() -> int:
     print("done counting unique number, took: ", end_time - start_time)
     return res
 
+
+bitmap = multiprocessing.RawArray('i', (2 ** 27))
 
 if __name__ == "__main__":
     result = main()

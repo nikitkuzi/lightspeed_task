@@ -76,13 +76,13 @@ def main() -> int:
     # file_with_ip = "ip_addresses"
     # file_with_ip = 'test_data3.txt' # 1000
     # file_with_ip = "test_data.txt" # 9988184
-    file_with_ip = "test_data2.txt" # 98845647
+    file_with_ip = "test_data2.txt"  # 98845647
     bitmap_file = "bitmap.dat"
     process_count = multiprocessing.cpu_count() // 2
     file_names = [file_with_ip] * process_count
     bitmap_names = [bitmap_file] * process_count
     with open(bitmap_file, 'wb') as file:
-        file.write(bytearray(2**29))
+        file.write(bytearray(2 ** 29))
 
     # split file into chunks [a,b] to read in separate processes
     # then modify the ranges, so that a is always at the beginning of a new line

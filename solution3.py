@@ -23,15 +23,30 @@ def add(item):
     registers[register_index] = max(registers[register_index], rho(hash_value >> b))
 
 
+def count_sum(start, end):
+    return sum(0.5 ** reg for reg in registers[start:end])
+
+
+def count_zeros(start, end):
+    return sum(1 for reg in registers[start:end] if reg == 0)
+
+
 def estimate():
     # Compute the raw HyperLogLog estimate
-    Z = 1.0 / sum([0.5 ** reg for reg in registers])
+    chunks_len = len(registers) // process_count
+    chunks = [[i, i + chunks_len] for i in range(0, len(registers) - process_count, chunks_len)]
+    chunks[-1][1] = len(registers)
+    with multiprocessing.Pool(processes=process_count) as pool:
+        partial_sum = pool.starmap(count_sum, chunks)
+    Z = 1.0 / sum(partial_sum)
     E = alphaMM * Z
 
     # Apply the correction for very small or large cardinalities
     # If E <= 2.5 * m, use the raw estimate (adjusted)
     if E <= 2.5 * m:
-        V = sum(1 for x in registers if x == 0)
+        with multiprocessing.Pool(processes=process_count) as pool:
+            partial_zeros = pool.starmap(count_zeros, chunks)
+        V = sum(partial_zeros)
         if V > 0:
             E = m * math.log(m / V)
 
@@ -89,13 +104,14 @@ b = 15  # Number of bits used for registers (log2 of the number of registers)
 m = 2 ** b  # Number of registers (2^b)
 alphaMM = (0.7213 / (1 + 1.079 / m)) * m * m  # Correction factor for small m
 registers = multiprocessing.RawArray('i', m)  # Initialize the registers to 0
+process_count = multiprocessing.cpu_count() // 2
 
 
 def main():
     # file_with_ip = 'test_data3.txt' # 1000
     file_with_ip = "test_data.txt"  # 9988184
-    # file_with_ip = "test_data2.txt" # 98845647
-    process_count = multiprocessing.cpu_count() // 2
+    file_with_ip = "test_data2.txt"  # 98845647
+    # file_with_ip = "ip_addresses" # 1000000000
     names = [file_with_ip] * process_count
 
     # split file into chunks [a,b] ]to read in separate processes
