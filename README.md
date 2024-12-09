@@ -3,6 +3,7 @@ I have zero experience with GO, I dont know best practices, patterns, etc, so I 
 Overall, I enjoyed using GO and I definitely will be learning it more.
 
 I have written some commentaries in the code, but the code and ideas are pretty easy to follow anyway.
+I was treating this task more like a Leetcode problem, rather than production code, so I was not handling errors, comments etc
 
 Also, I havent tested the solutions on Windows or MacOS. There were no restrictions for the task, and I am using Ubuntu.
 I think that these solutions might not work on Windows or MacOS, due to different ways of reading/writing to a file. But I think that this problem should not be that hard to fix. 
