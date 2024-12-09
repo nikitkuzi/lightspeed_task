@@ -81,7 +81,7 @@ def main() -> int:
     # create chunks of [a,b] to split entire bitmap
     chunks_len = 2 ** 32 // process_count
     chunks_ranges = [[i, i + chunks_len] for i in range(0, 2 ** 32 - process_count, chunks_len)]
-    chunks_ranges[-1][1] = 2 ** 32
+    chunks_ranges[-1][1] = 2 ** 32 + 1
 
     with multiprocessing.Pool(processes=process_count) as pool:
         chunk_sum = pool.starmap(count_unique_ips, chunks_ranges)

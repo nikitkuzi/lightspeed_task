@@ -110,7 +110,7 @@ process_count = multiprocessing.cpu_count() // 2
 def main():
     # file_with_ip = 'test_data3.txt' # 1000
     file_with_ip = "test_data.txt"  # 9988184
-    file_with_ip = "test_data2.txt"  # 98845647
+    # file_with_ip = "test_data2.txt"  # 98845647
     # file_with_ip = "ip_addresses" # 1000000000
     names = [file_with_ip] * process_count
 
